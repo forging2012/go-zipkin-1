@@ -1,36 +1,28 @@
 package main
 
 import (
-	"flag"
 	"log"
 
+	"github.com/raymasson/go-zipkin/client"
+	"github.com/raymasson/go-zipkin/config"
+	"github.com/raymasson/go-zipkin/server"
 	jaeger "github.com/uber/jaeger-client-go"
 	"github.com/uber/jaeger-client-go/transport/zipkin"
 )
 
-var (
-	zipkinURL = flag.String("url",
-		"http://localhost:9411/api/v1/spans", "Zipkin server URL")
-	serverPort = flag.String("port", "8000", "server port")
-	actorKind  = flag.String("actor", "server", "server or client")
-)
-
-const (
-	server = "server"
-	client = "client"
-)
+func init() {
+	config.Get()
+}
 
 func main() {
-	flag.Parse()
-
-	if *actorKind != server && *actorKind != client {
+	if *config.ActorKind != config.Server && *config.ActorKind != config.Client {
 		log.Fatal("Please specify '-actor server' or '-actor client'")
 	}
 
 	// Jaeger tracer can be initialized with a transport that will
 	// report tracing Spans to a Zipkin backend
 	transport, err := zipkin.NewHTTPTransport(
-		*zipkinURL,
+		*config.ZipkinURL,
 		zipkin.HTTPBatchSize(1),
 		zipkin.HTTPLogger(jaeger.StdLogger),
 	)
@@ -39,12 +31,12 @@ func main() {
 	}
 	// create Jaeger tracer
 	tracer, closer := jaeger.NewTracer(
-		*actorKind,
+		*config.ActorKind,
 		jaeger.NewConstSampler(true), // sample all traces
 		jaeger.NewRemoteReporter(transport, nil),
 	)
 
-	if *actorKind == server {
+	if *config.ActorKind == config.Server {
 		server.Run(tracer)
 		return
 	}

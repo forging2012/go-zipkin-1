@@ -10,6 +10,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/raymasson/go-zipkin/config"
 	"golang.org/x/net/context"
 )
 
@@ -19,14 +20,14 @@ func Run(tracer opentracing.Tracer) {
 	c := &http.Client{Transport: &nethttp.Transport{}}
 
 	// create a top-level span to represent full work of the client
-	span := tracer.StartSpan(client)
-	span.SetTag(string(ext.Component), client)
+	span := tracer.StartSpan(config.Client)
+	span.SetTag(string(ext.Component), config.Client)
 	defer span.Finish()
 	ctx := opentracing.ContextWithSpan(context.Background(), span)
 
 	req, err := http.NewRequest(
 		"GET",
-		fmt.Sprintf("http://localhost:%s/", *serverPort),
+		fmt.Sprintf("http://localhost:%s/", *config.ServerPort),
 		nil,
 	)
 	if err != nil {
